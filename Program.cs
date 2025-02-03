@@ -1,3 +1,5 @@
+using SourceManagerPUX.Services;
+
 namespace SourceManagerPUX
 {
     public class Program
@@ -8,6 +10,7 @@ namespace SourceManagerPUX
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddScoped<DirectoryAnalyzer>();
 
             var app = builder.Build();
 

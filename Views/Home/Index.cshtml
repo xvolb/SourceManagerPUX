@@ -1,8 +1,37 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿<form method="post" asp-controller="Home" asp-action="AnalyzeDirectory">
+    <label for="directoryPath">Enter path:</label>
+    <input type="text" id="directoryPath" name="directoryPath" style="width: 300px;" required />
+    <button type="submit">Analyze</button>
+</form>
+
+@if (ViewBag.Error != null)
+{
+    <p style="color:red;">@ViewBag.Error</p>
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (ViewBag.Result != null)
+{
+    <h4>New:</h4>
+    <ul>
+        @foreach (var file in (List<string>)ViewBag.Result.NewFilesAndDirectories)
+        {
+            <li>@file</li>
+        }
+    </ul>
+
+    <h4>Changed:</h4>
+    <ul>
+        @foreach (var file in (List<string>)ViewBag.Result.ChangedFilesAndDirectories)
+        {
+            <li>@file</li>
+        }
+    </ul>
+
+    <h4>Deleted:</h4>
+    <ul>
+        @foreach (var file in (List<string>)ViewBag.Result.DeletedFilesAndDirectories)
+        {
+            <li>@file</li>
+        }
+    </ul>
+}
