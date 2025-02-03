@@ -16,13 +16,15 @@ namespace SourceManagerPUX.Services
         }
         public ComparisonResult AnalyzeDirectory(string directoryPath)
         {
+            Dictionary<string, FolderState> allFolderStates = LoadAllFolderStates();
+            Dictionary<string, FolderAndeFileMetaData> currentState = GetDirectoryAndFileState(directoryPath);
+            Dictionary<string, FolderAndeFileMetaData> previousState = allFolderStates.ContainsKey(directoryPath)
+                        ? allFolderStates[directoryPath].Files
+                        : new Dictionary<string, FolderAndeFileMetaData>();
 
-            var currentState = GetDirectoryAndFileState(directoryPath);
-            var previousState = LoadPreviousState();
+            ComparisonResult result = CompareStates(previousState, currentState);
 
-            var result = CompareStates(previousState, currentState);
-
-            SaveCurrentState(currentState);
+            UpdateOrAddFolderState(directoryPath, currentState);
 
             return result;
         }
@@ -66,22 +68,7 @@ namespace SourceManagerPUX.Services
 
             return state;
         }
-        public void SaveCurrentState(Dictionary<string, FolderAndeFileMetaData> state)
-        {
-            var json = JsonSerializer.Serialize(state);
-            System.IO.File.WriteAllText(_previousStateFile, json);
-        }
-
-        public Dictionary<string, FolderAndeFileMetaData> LoadPreviousState()
-        {
-            if (System.IO.File.Exists(_previousStateFile))
-            {
-                var json = System.IO.File.ReadAllText(_previousStateFile);
-                return JsonSerializer.Deserialize<Dictionary<string, FolderAndeFileMetaData>>(json) ?? new Dictionary<string, FolderAndeFileMetaData>();
-            }
-            return new Dictionary<string, FolderAndeFileMetaData>();
-        }
-
+        
         public ComparisonResult CompareStates(Dictionary<string, FolderAndeFileMetaData> previousState, Dictionary<string, FolderAndeFileMetaData> currentState)
         {
             var newFilesAndDirectories = new List<string>();
@@ -118,7 +105,40 @@ namespace SourceManagerPUX.Services
                 DeletedFilesAndDirectories = deletedFilesAndDirectories
             };
         }
+        public Dictionary<string, FolderState> LoadAllFolderStates()
+        {
+            if (System.IO.File.Exists(_previousStateFile))
+            {
+                var json = System.IO.File.ReadAllText(_previousStateFile);
+                return JsonSerializer.Deserialize<Dictionary<string, FolderState>>(json) ?? new Dictionary<string, FolderState>();
+            }
+            return new Dictionary<string, FolderState>();
+        }
+        public void UpdateOrAddFolderState(string directoryPath, Dictionary<string, FolderAndeFileMetaData> currentState)
+        {
+            var allFolderStates = LoadAllFolderStates();
 
+            if (allFolderStates.ContainsKey(directoryPath))
+            {
+                allFolderStates[directoryPath].Files = currentState;
+            }
+            else
+            {
+                allFolderStates[directoryPath] = new FolderState
+                {
+                    DirectoryPath = directoryPath,
+                    Files = currentState
+                };
+            }
+
+            SaveAllFolderStates(allFolderStates);
+        }
+        public void SaveAllFolderStates(Dictionary<string, FolderState> allFolderStates)
+        {
+            var json = JsonSerializer.Serialize(allFolderStates);
+            System.IO.File.WriteAllText(_previousStateFile, json);
+        }
+        
         private string ComputeFileHash(string filePath)
         {
             using (var sha256 = SHA256.Create())
