@@ -114,6 +114,7 @@ namespace SourceManagerPUX.Services
             }
             return new Dictionary<string, FolderState>();
         }
+        // Updates the current directory's state in the saved folder states or adds it if it's new.
         public void UpdateOrAddFolderState(string directoryPath, Dictionary<string, FolderAndeFileMetaData> currentState)
         {
             var allFolderStates = LoadAllFolderStates();
@@ -138,7 +139,7 @@ namespace SourceManagerPUX.Services
             var json = JsonSerializer.Serialize(allFolderStates);
             System.IO.File.WriteAllText(_previousStateFile, json);
         }
-        
+        #region Hashes
         private string ComputeFileHash(string filePath)
         {
             using (var sha256 = SHA256.Create())
@@ -169,5 +170,6 @@ namespace SourceManagerPUX.Services
                 return BitConverter.ToString(folderHashBytes).Replace("-", "").ToLower();
             }
         }
+        #endregion
     }
 }
