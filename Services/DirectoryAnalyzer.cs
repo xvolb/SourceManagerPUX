@@ -31,11 +31,11 @@ namespace SourceManagerPUX.Services
         {
             var state = new Dictionary<string, FolderAndeFileMetaData>();
 
-            foreach (var file in Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly))
+            foreach (string file in Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly))
             {
                 try
                 {
-                    var hash = ComputeFileHash(file);
+                    string hash = ComputeFileHash(file);
                     state[file] = new FolderAndeFileMetaData
                     {
                         Name = Path.GetFileName(file),
@@ -55,10 +55,11 @@ namespace SourceManagerPUX.Services
 
             foreach (var dir in Directory.GetDirectories(directoryPath, "*", SearchOption.TopDirectoryOnly))
             {
+                string folderHash = ComputeFolderHash(dir);
                 state[dir] = new FolderAndeFileMetaData
                 {
                     Name = Path.GetFileName(dir),
-                    Hash = string.Empty,
+                    Hash = folderHash,
                     Version = 1
                 };
             }
@@ -126,6 +127,26 @@ namespace SourceManagerPUX.Services
                 {
                     return BitConverter.ToString(sha256.ComputeHash(stream)).Replace("-", "").ToLower();
                 }
+            }
+        }
+        private string ComputeFolderHash(string directoryPath)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var files = Directory.GetFiles(directoryPath, "*.*", SearchOption.AllDirectories)
+                                     .OrderBy(f => f)
+                                     .ToList();
+
+                var combinedHash = string.Empty;
+
+                foreach (var file in files)
+                {
+                    var fileHash = ComputeFileHash(file);
+                    combinedHash += fileHash;
+                }
+
+                var folderHashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(combinedHash));
+                return BitConverter.ToString(folderHashBytes).Replace("-", "").ToLower();
             }
         }
     }
