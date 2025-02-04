@@ -180,19 +180,11 @@ namespace SourceManagerPUX.Services
         {
             using (var sha256 = SHA256.Create())
             {
-                var files = Directory.GetFiles(directoryPath, "*.*", SearchOption.AllDirectories)
-                                     .OrderBy(f => f)
-                                     .ToList();
+                var lastWriteTime = Directory.GetLastWriteTimeUtc(directoryPath);
 
-                var combinedHash = string.Empty;
+                var folderData = $"{directoryPath}{lastWriteTime:O}";
 
-                foreach (var file in files)
-                {
-                    var fileHash = ComputeFileHash(file);
-                    combinedHash += fileHash;
-                }
-
-                var folderHashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(combinedHash));
+                var folderHashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(folderData));
                 return BitConverter.ToString(folderHashBytes).Replace("-", "").ToLower();
             }
         }
