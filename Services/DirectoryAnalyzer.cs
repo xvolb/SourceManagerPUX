@@ -72,13 +72,24 @@ namespace SourceManagerPUX.Services
 
             foreach (var dir in Directory.GetDirectories(directoryPath, "*", SearchOption.TopDirectoryOnly))
             {
-                string folderHash = ComputeFolderHash(dir);
-                state[dir] = new FolderAndeFileMetaData
+                try
                 {
-                    Name = Path.GetFileName(dir),
-                    Hash = folderHash,
-                    Version = 1
-                };
+                    string folderHash = ComputeFolderHash(dir);
+                    state[dir] = new FolderAndeFileMetaData
+                    {
+                        Name = Path.GetFileName(dir),
+                        Hash = folderHash,
+                        Version = 1
+                    };
+                }
+                catch (IOException ex)
+                {
+                    _logger.LogWarning($"[{DateTime.Now}] Skipped '{dir}': {ex.Message}");
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    _logger.LogWarning($"[{DateTime.Now}] Access denied to the directory '{dir}'. Error: {ex.Message}");
+                }
             }
 
             return state;
