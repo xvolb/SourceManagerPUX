@@ -31,12 +31,27 @@ namespace SourceManagerPUX.Services
 
         public Dictionary<string, FolderAndeFileMetaData> GetDirectoryAndFileState(string directoryPath)
         {
+            const int FilesMaxCount = 100;
+            const long MaxFileSize = 52428800;
             var state = new Dictionary<string, FolderAndeFileMetaData>();
 
-            foreach (string file in Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly))
+            List<string> files = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly).Take(FilesMaxCount).ToList();
+            if (files.Count >= FilesMaxCount)
+            {
+                _logger.LogWarning($"[{DateTime.Now}] Directory '{directoryPath}' contains more than {FilesMaxCount} files. Only the first {FilesMaxCount} will be processed.");
+            }
+
+            foreach (string file in files)
             {
                 try
                 {
+                    // Check file size (50 MB = 50 * 1024 * 1024 bytes=52428800)
+                    var fileInfo = new FileInfo(file);
+                    if (fileInfo.Length > MaxFileSize)
+                    {
+                        _logger.LogWarning($"[{DateTime.Now}] Skipped file '{file}' because its size exceeds 50 MB.");
+                        continue;
+                    }
                     string hash = ComputeFileHash(file);
                     state[file] = new FolderAndeFileMetaData
                     {
